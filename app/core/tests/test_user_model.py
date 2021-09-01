@@ -6,7 +6,7 @@ can be overidden to provide what ever user model is needed
 from django.contrib.auth import get_user_model
 
 
-class ModelTests(TestCase):
+class UserModelTests(TestCase):
 
     def test_should_create_user_with_email_successful(self):
         # Given

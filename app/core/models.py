@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, \
                                         PermissionsMixin
 
+
 """The manager class is the go between the database and the models. Every
 model needs at least one manager class. Django adds one per model by default
 but if you need special behaviour you can override it like in this file"""
@@ -46,3 +47,11 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     """USERNAME_FIELD is manditory so swaps the value out for email"""
     USERNAME_FIELD = 'email'
+
+
+class Ingredient(models.Model):
+    """Ingredient model to be used in a recipe"""
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
