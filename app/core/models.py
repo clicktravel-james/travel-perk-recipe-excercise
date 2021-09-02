@@ -2,7 +2,6 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, \
                                         PermissionsMixin
 
-
 """The manager class is the go between the database and the models. Every
 model needs at least one manager class. Django adds one per model by default
 but if you need special behaviour you can override it like in this file"""
@@ -55,3 +54,39 @@ class Ingredient(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Recipe(models.Model):
+    """Recipe to be used in a recipe"""
+    """Each property ends up as column in the database"""
+
+    class Meta:
+        """This is now immutable as Django wished to
+        remove the relationship to a ingredient now
+        auto_create=True"""
+        managed = False
+
+    name = models.CharField(max_length=255)
+    description = models.CharField(max_length=255)
+    ingredients = models.ManyToManyField(
+        Ingredient, through='IngredientForARecipe'
+    )
+
+    def __str__(self):
+        return self.name
+
+
+class IngredientForARecipe(models.Model):
+    """This join model allows a single ingredient to be related to a
+    recipe in a one-to-many way"""
+
+    class Meta:
+        """The way in which I have got this to work smells
+        like a hack but I reckon it will give me the outcome
+        I want where  this join is created automatically
+        for me without the need for any extra code"""
+        managed = False
+        auto_created = True
+
+    Recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
+    Ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
