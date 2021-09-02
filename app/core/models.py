@@ -56,9 +56,32 @@ class Ingredient(models.Model):
         return self.name
 
 
+class RecipeManager(models.Manager):
+    """This manager has been added for saving of the
+    Recipe model with ingredients"""
+
+    def create_recipe_with_ingredients(
+            self, name, description, ingredient_names):
+        """First saves a simple recipe then adds
+        the ingredient for the one to many relationship"""
+
+        recipe = self.model(
+            name=name,
+            description=description,
+        )
+        recipe.save(using=self.db)
+
+        if ingredient_names:
+            for ingredient_name in ingredient_names:
+                recipe.ingredients.create(name=ingredient_name)
+
+        return recipe
+
+
 class Recipe(models.Model):
-    """Recipe to be used in a recipe"""
-    """Each property ends up as column in the database"""
+    """Recipe object to be used to create recipes"""
+
+    objects = RecipeManager()
 
     class Meta:
         """This is now immutable as Django wished to
