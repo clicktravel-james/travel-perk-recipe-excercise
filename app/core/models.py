@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, \
                                         PermissionsMixin
+from django.db.models.signals import pre_delete
+from django.dispatch import receiver
 
 """The manager class is the go between the database and the models. Every
 model needs at least one manager class. Django adds one per model by default
@@ -131,3 +133,13 @@ class IngredientForARecipe(models.Model):
 
     Recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
     Ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
+
+    @receiver(pre_delete)
+    def delete_recipe_ingredients(sender, instance, **kwargs):
+        """Using this signal was the only way I could assure the
+        automatic deletion all the ingredients for a recipe"""
+        if sender.__name__ == Recipe.__name__:
+            related_ingredients = instance.ingredients.all()
+            if len(related_ingredients) > 0:
+                for related_ingredient in related_ingredients:
+                    related_ingredient.delete()

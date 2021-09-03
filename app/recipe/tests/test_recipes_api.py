@@ -1,10 +1,11 @@
 from django.test import TestCase
 from django.urls import reverse
+from django.db.models import Q
 
 from rest_framework.test import APIClient
 from rest_framework import status
 
-from core.models import Recipe
+from core.models import Recipe, Ingredient
 
 from recipe.serializers import RecipeSerializer
 
@@ -138,3 +139,22 @@ class PublicRecipeApiTest(TestCase):
             set(ingredient_model_names),
             set(ingredient_response_names)
         )
+
+    def test_should_delete_a_recipe_with_its_ingredients(self):
+        # Given
+        recipe = sample_recipe()
+        Ingredient1 = recipe.ingredients.create(name="pepperoni")
+        Ingredient2 = recipe.ingredients.create(name="cheese")
+        recipe_details_url = create_recipe_details_url(recipe.id)
+
+        # When
+        res = self.client.delete(recipe_details_url,)
+
+        # Then
+        self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
+        recipe = Recipe.objects.filter(id=recipe.id)
+        self.assertEqual(len(recipe), 0)
+        persisted_ingredients = Ingredient.objects.filter(
+            Q(id=Ingredient1.id) | Q(id=Ingredient2.id)
+        )
+        self.assertEqual(len(persisted_ingredients), 0)
