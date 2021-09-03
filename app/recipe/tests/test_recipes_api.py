@@ -23,6 +23,25 @@ def sample_recipe(**params):
     return Recipe.objects.create(**defaults)
 
 
+def create_recipe_details_url(recipe_id):
+    """Function for creating a dynamic url for recipe details"""
+    return reverse('recipe:recipe-detail', args=[recipe_id])
+
+
+def map_ingredient_model_to_name(ingredients_model):
+    if ingredients_model and ingredients_model.name:
+        return ingredients_model.name
+
+    return None
+
+
+def map_ingredient_data_to_name(ingredients_object):
+    if ingredients_object and ingredients_object['name']:
+        return ingredients_object['name']
+
+    return None
+
+
 class PublicRecipeApiTest(TestCase):
 
     def setUp(self):
@@ -67,3 +86,55 @@ class PublicRecipeApiTest(TestCase):
         for i in range(len(res.data['ingredients'])):
             self.assertEqual(payload['ingredients'][i]['name'],
                              res.data['ingredients'][i]['name'])
+
+    def test_should_partially_update_a_recipe_with_basic_details(self):
+        # Given
+        original_recipe = sample_recipe()
+        payload = {
+            'name': 'Chocolate fudge cake',
+            'description': 'Mix the chocolate with the fudge and the cake',
+        }
+        recipe_details_url = create_recipe_details_url(original_recipe.id)
+
+        # When
+        res = self.client.patch(recipe_details_url, payload, format='json')
+
+        # Then
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        recipe = Recipe.objects.get(id=res.data['id'])
+        self.assertEqual(payload['name'], getattr(recipe, 'name'))
+        self.assertEqual(payload['description'],
+                         getattr(recipe, 'description'))
+
+    def test_should_partially_update_a_recipe_with_ingredients(self):
+        # Given
+        original_recipe = sample_recipe()
+        original_recipe.ingredients.create(name="pepperoni")
+        payload = {
+            'ingredients': [
+                {'name': 'dough'},
+                {'name': 'cheese'},
+                {'name': 'tomato'}
+            ]
+        }
+        recipe_details_url = create_recipe_details_url(original_recipe.id)
+
+        # When
+        res = self.client.patch(recipe_details_url, payload, format='json')
+
+        # Then
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        recipe = Recipe.objects.get(id=res.data['id'])
+        self.assertEqual(res.data['name'], getattr(recipe, 'name'))
+        self.assertEqual(res.data['description'],
+                         getattr(recipe, 'description'))
+
+        all_persisted_ingredients_for_recipe = recipe.ingredients.all()
+        ingredient_model_names = map(map_ingredient_model_to_name,
+                                     all_persisted_ingredients_for_recipe)
+        ingredient_response_names = map(map_ingredient_data_to_name,
+                                        res.data['ingredients'])
+        self.assertEqual(
+            set(ingredient_model_names),
+            set(ingredient_response_names)
+        )

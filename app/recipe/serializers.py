@@ -11,9 +11,18 @@ class IngredientSerializer(serializers.ModelSerializer):
         read_only_fields = ('id',)
 
 
+class IngredientRecipeDetailsSerializer(serializers.ModelSerializer):
+    """Serializer for an ingredient object"""
+
+    class Meta:
+        model = Ingredient
+        read_only_fields = ('id',)
+        exclude = ('id',)
+
+
 class RecipeSerializer(serializers.ModelSerializer):
     """Serializer for an recipe object"""
-    ingredients = IngredientSerializer(many=True)
+    ingredients = IngredientRecipeDetailsSerializer(many=True)
 
     class Meta:
         model = Recipe
@@ -37,3 +46,17 @@ class RecipeSerializer(serializers.ModelSerializer):
         return Recipe.objects.create_recipe_with_ingredients(name,
                                                              description,
                                                              ingredient_names)
+
+    def update(self, instance, validated_data):
+        """Deal specifically with the nested ingredients then call super
+        for auto-magically dealing with the supported basic fields"""
+        if 'ingredients' in validated_data:
+            ingredient_data = validated_data.pop('ingredients')
+            ingredient_names = map(self.map_to_ingredient_name,
+                                   ingredient_data)
+            Recipe.objects.update_recipe_ingredients(
+                recipe_instance=instance,
+                ingredient_names=ingredient_names,
+            )
+
+        return super().update(instance, validated_data)

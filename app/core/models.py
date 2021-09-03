@@ -60,6 +60,11 @@ class RecipeManager(models.Manager):
     """This manager has been added for saving of the
     Recipe model with ingredients"""
 
+    def _create_ingredients_for_name_on_recipe(self, ingredient_names, recipe):
+        if ingredient_names:
+            for ingredient_name in ingredient_names:
+                recipe.ingredients.create(name=ingredient_name)
+
     def create_recipe_with_ingredients(
             self, name, description, ingredient_names):
         """First saves a simple recipe then adds
@@ -71,11 +76,24 @@ class RecipeManager(models.Manager):
         )
         recipe.save(using=self.db)
 
-        if ingredient_names:
-            for ingredient_name in ingredient_names:
-                recipe.ingredients.create(name=ingredient_name)
+        self._create_ingredients_for_name_on_recipe(ingredient_names, recipe)
 
         return recipe
+
+    def update_recipe_ingredients(self, recipe_instance, ingredient_names):
+        """First remove all current ingredients"""
+        if recipe_instance.ingredients:
+            for ingredient_model in recipe_instance.ingredients.all():
+                recipe_instance.ingredients.remove(ingredient_model)
+                ingredient_model.delete()
+
+        """Then create the new replacement ingredients"""
+        self._create_ingredients_for_name_on_recipe(
+            ingredient_names=ingredient_names,
+            recipe=recipe_instance,
+        )
+
+        return recipe_instance
 
 
 class Recipe(models.Model):
