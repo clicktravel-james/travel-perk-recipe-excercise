@@ -143,8 +143,8 @@ class PublicRecipeApiTest(TestCase):
     def test_should_delete_a_recipe_with_its_ingredients(self):
         # Given
         recipe = sample_recipe()
-        Ingredient1 = recipe.ingredients.create(name="pepperoni")
-        Ingredient2 = recipe.ingredients.create(name="cheese")
+        ingredient1 = recipe.ingredients.create(name="pepperoni")
+        ingredient2 = recipe.ingredients.create(name="cheese")
         recipe_details_url = create_recipe_details_url(recipe.id)
 
         # When
@@ -155,6 +155,52 @@ class PublicRecipeApiTest(TestCase):
         recipe = Recipe.objects.filter(id=recipe.id)
         self.assertEqual(len(recipe), 0)
         persisted_ingredients = Ingredient.objects.filter(
-            Q(id=Ingredient1.id) | Q(id=Ingredient2.id)
+            Q(id=ingredient1.id) | Q(id=ingredient2.id)
         )
         self.assertEqual(len(persisted_ingredients), 0)
+
+    def test_should_search_recipes_by_partial_match_on_name(self):
+        # Given
+        recipe_name = 'Vegetable soup'
+        partial_name = 'veg'
+        recipe1 = sample_recipe(name=recipe_name)
+        recipe2 = sample_recipe(name=recipe_name)
+        recipe3 = sample_recipe(name="Pizza")
+
+        # When
+        res = self.client.get(
+            RECIPES_URL,
+            {'name': f'{partial_name}'}
+        )
+
+        # Then
+        serializer1 = RecipeSerializer(recipe1)
+        serializer2 = RecipeSerializer(recipe2)
+        serializer3 = RecipeSerializer(recipe3)
+        self.assertIn(serializer1.data, res.data)
+        self.assertIn(serializer2.data, res.data)
+        self.assertNotIn(serializer3.data, res.data)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+    def test_filter_recipes_by_ingredients(self):
+        """Given"""
+        recipe1 = sample_recipe(name='Pork Chow mein')
+        recipe2 = sample_recipe(name='Chicken Dinner')
+        ingredient1 = recipe1.ingredients.create(name='Pork mince')
+        ingredient2 = recipe2.ingredients.create(name='Sprout')
+        recipe3 = sample_recipe(name='Vegetable Curry')
+
+        """When"""
+        res = self.client.get(
+            RECIPES_URL,
+            {'ingredients': f'{ingredient1.id},{ingredient2.id}'}
+        )
+
+        """Then"""
+        serializer1 = RecipeSerializer(recipe1)
+        serializer2 = RecipeSerializer(recipe2)
+        serializer3 = RecipeSerializer(recipe3)
+        self.assertIn(serializer1.data, res.data)
+        self.assertIn(serializer2.data, res.data)
+        self.assertNotIn(serializer3.data, res.data)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
