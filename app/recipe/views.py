@@ -28,8 +28,11 @@ class RecipeViewSet(viewsets.ModelViewSet,):
 
     def get_queryset(self):
         """Return recipes for the current authenticated user only"""
+        name = self.request.query_params.get('name')
         ingredients = self.request.query_params.get('ingredients')
         queryset = self.queryset
+        if name:
+            queryset = queryset.filter(name__icontains=name)
         if ingredients:
             ingredient_ids = self._params_to_ints(ingredients)
             queryset = queryset.filter(ingredients__id__in=ingredient_ids)
