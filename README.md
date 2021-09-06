@@ -1,6 +1,16 @@
 # travel-perk-recipe-excercise
 The exercise described in the onboarding to showcase my new found knowledge of Django and its rest framework.
 
+## Environment variables
+
+In order to remove secrets from source control the use of environment variables via docker 
+substitution has been used in the compose file. To allow for this substitution add a docker 
+.env file and add the following properties.
+
+```
+DATABASE_PASSWORD={local_db_password_here}
+```
+
 ## Project Docker Commands
 
 #### Build
