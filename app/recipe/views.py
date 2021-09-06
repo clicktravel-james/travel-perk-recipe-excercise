@@ -14,7 +14,7 @@ class IngredientViewSet(viewsets.GenericViewSet,
     def get_queryset(self):
         """Return Ingredients objects ordered by name"""
         queryset = self.queryset
-        return queryset.order_by('-id').distinct()
+        return queryset.order_by('-name').distinct()
 
 
 class RecipeViewSet(viewsets.ModelViewSet,):
@@ -37,4 +37,4 @@ class RecipeViewSet(viewsets.ModelViewSet,):
             ingredient_ids = self._params_to_ints(ingredients)
             queryset = queryset.filter(ingredients__id__in=ingredient_ids)
 
-        return queryset.order_by('-id')
+        return queryset.order_by('-name')
